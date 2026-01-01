@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>风筝放飞拍摄</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            font-family: "Noto Sans SC Regular", sans-serif;
+        }
+        body {
+            background-image: url("images/2/background.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            height: 100vh;
+            overflow: hidden;
+            will-change: auto;
+        }
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* ========== 第一页（拍摄页） ========== */
+        #shoot-page {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .camera-view {
+            position: absolute;
+            top: 10vh;          
+            left: 10vw;
+            width: 80vw;
+            height: 75vh;      
+            border: 4px solid #a8d08d;
+            background-color: #fff8e6;
+            overflow: hidden; 
+            z-index: 1;
+            max-height: 80vh;  
+            will-change: contents;
+        }
+        #camera-preview {
+            object-fit: cover; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: none;
+        }
+        #kite-tail-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; 
+            z-index: 1;
+        }
+        #kite-img {
+            position: absolute;
+            top: 48vh;         
+            left: 15vw;
+            transform: rotate(15deg);
+            width: 80vw;
+            height: auto; 
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.2s;
+            max-width: 50vw;
+            max-height: 40vh;
+            object-fit: contain; 
+            image-rendering: auto;
+            will-change: transform, top, left; /* 优化动画性能 */
+            /* 确保图片不透明 */
+            opacity: 1;
+            visibility: visible;
+        }
+        @keyframes kiteFlyCurve {
+            0% {
+                transform: rotate(15deg) scale(1);
+                top:48vh;       
+                left: 15vw;
+            }
+            25% {
+                transform: rotate(20deg) scale(0.95);
+                top: 40vh;      
+                left:25vw;
+            }
+            50% {
+                transform: rotate(25deg) scale(0.83);
+                top: 34vh;      
+                left: 35vw;
+            }
+            75% {
+                transform: rotate(20deg) scale(0.78);
+                top: 28vh;      
+                left: 42vw;
+            }
+            100% {
+                transform: rotate(15deg) scale(0.76);
+                top: 16vh;      
+                left: 40vw;
+            }
+        }
+        @keyframes kiteFloat {
+            0% { top: 16vh; }  
+            50% { top: 20vh; }
+            100% { top: 16vh; }
+        }
+        .flying {
+            animation: 
+                kiteFlyCurve 2.5s ease-out forwards, 
+                kiteFloat 1.5s infinite ease-in-out 2.5s;
+        }
+        .hint {
+            position: absolute;
+            top: 11vh;         
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 4vw;
+            color: #FFF;
+            z-index: 2;
+            text-align: center;
+        }
+        #shoot-btn {
+            position: absolute;
+            bottom: 18vh;      
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16vw;
+            height: 16vw;
+            border: none;
+            border-radius: 50%;
+            background-color: transparent;
+            background-image: url("images/2/资源 57@0.5x.webp");
+            background-size: 100% 100%;
+            cursor: pointer;
+            z-index: 99;
+        }
+        .shoot-text {
+            position: absolute;
+            bottom: 15.5vh;      
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3.5vw;
+            color: #FFF;
+            z-index: 100;
+        }
+        /* 音乐按钮样式 */
+        .music-btn {
+            position: absolute;
+            top: 3vh;
+            right: 5vw;
+            width: clamp(28px, 7vw, 40px);
+            height: clamp(28px, 7vw, 40px);
+            border-radius: 50%;
+            background-color: transparent;
+            background-image: url("images/2/资源 24@0.5x.webp");
+            background-size: 100% 100%;
+            cursor: pointer;
+            z-index: 99;
+            transition: transform 0.2s ease;
+            will-change: transform;
+        }
+        .music-btn.active {
+            animation: rotateMusic 3s linear infinite;
+        }
+        @keyframes rotateMusic {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ========== 第二页（预览页） ========== */
+        #preview-page {
+            display: none;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+        }
+        .preview-box {
+            position: absolute;
+            top: 10vh;          
+            left: 10vw;
+            width: 80vw;
+            height: 75vh;      
+            border: 4px solid #a8d08d;
+            background-color: #fff8e6;
+            overflow: hidden;
+            z-index: 101;
+            max-height: 80vh;  
+        }
+        #preview-img {
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .btn-group {
+            position: absolute;
+            bottom: 8vh;      
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10vw;
+            z-index: 102;
+        }
+        .preview-btn {
+            border: none;        
+            background-color: transparent; 
+            padding: 0;          
+            text-indent: -9999px;
+            overflow: hidden;    
+            cursor: pointer;     
+        }
+        #retake-btn {
+            background-image: url("images/2/资源 51@0.5x.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 24vw;
+            height: 8vw;
+        }
+        #confirm-btn {
+            background-image: url("images/2/资源 52@0.5x.png");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 24vw;
+            height: 8vw;
+        }
+
+        /* ========== 第三页（最终页） ========== */
+        #final-page {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200;
+            background: inherit;
+        }
+        .final-photo-area {
+            position: absolute;
+            top: 10vh;          
+            left: 10vw;        
+            width: 80vw;       
+            height: 75vh;      
+            border: 4px solid #a8d08d; 
+            background-color: transparent; 
+            overflow: hidden;
+            z-index: 201;
+            max-height: 80vh;  
+            position: relative; 
+        }
+        #final-photo {
+            object-fit: cover;
+            position: absolute;
+            top: 0;            
+            left: 0;           
+            width: 100%;       
+            height: 100%;      
+            z-index: 201;
+        }
+        .final-content-wrapper {
+            position: absolute;
+            bottom: 5%;
+            left: 0;          
+            right: 0;         
+            padding: 0 4%;    
+            z-index: 202;      
+            display: flex;
+            align-items: center;
+            justify-content: space-between; 
+            gap: 3vw; 
+            max-width: 100%; 
+        }
+        .kite-text {
+            font-size: clamp(24px, 8vw, 80px);    
+            font-weight: 400;   
+            color: #000;
+            background-color: rgba(255,255,255,0.8); 
+            padding: 1.5vw 2vw;  
+            line-height: 1.2;  
+            white-space: pre-line; 
+            display: inline-block;
+            font-family: "Microsoft YaHei", "SimHei", "Noto Sans SC Regular", sans-serif;
+        }
+        .qrcode-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1vw; 
+        }
+        #qrcode-img {
+            width: clamp(60px, 15vw, 120px);
+            height: auto;
+            border: 2px solid #fff;
+            background-color: #fff;
+            loading: lazy; /* 懒加载二维码 */
+        }
+        .qrcode-text {
+            font-size: clamp(12px, 3vw, 24px);
+            color: #000;
+            background-color: rgba(255,255,255,0.8);
+            padding: 0.5vw 1vw;
+            font-weight: 400;
+            white-space: nowrap;
+        }
+        .final-btn-group {
+            position: absolute;
+            bottom: 8vh;       
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5vw; 
+            align-items: center; 
+        }
+        .final-btn {
+            width: 8vw;       
+            height: 8vw;      
+            border: none;
+            background-color: transparent;
+            background-size: 100% 100%; 
+            background-repeat: no-repeat;
+            background-position: center top; 
+            cursor: pointer;
+            display: flex;
+            flex-direction: column; 
+            align-items: center;    
+            justify-content: flex-start; 
+            font-size: 3vw;      
+            color: #333;        
+            padding-top: 0;        
+            text-indent: 0;        
+            overflow: visible;     
+            line-height: 1;        
+        }
+        .final-btn span {
+            margin-top: 11vw; 
+            display: block;  
+        }
+        #save-btn {
+            background-image: url("images/2/资源 99@0.5x.webp");
+        }
+        #share-btn {
+            background-image: url("images/2/资源 100@0.5x.webp");
+        }
+        #back-btn {
+            background-image: url("images/2/资源 101@0.5x.webp");
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="shoot-page">
+            <div class="music-btn"></div>
+            <div class="hint">对准天空<br>点击风筝放飞</div>
+            <div class="camera-view" id="camera-container">
+                <video id="camera-preview" autoplay playsinline muted></video>
+                <canvas id="kite-tail-canvas"></canvas>
+            </div>
+            <!-- 修改：直接使用实际图片路径，去掉透明占位 -->
+            <img id="kite-img" 
+                 src="images/2/IMG_2589.png" 
+                 data-src="images/2/IMG_2589.png" 
+                 alt="风筝" 
+                 loading="eager">
+            <div id="shoot-btn"></div>
+            <div class="shoot-text">点击拍摄</div>
+        </div>
+
+        <div id="preview-page">
+            <div class="music-btn"></div>
+            <div class="preview-box" id="preview-container">
+                <img id="preview-img" alt="拍摄的照片">
+            </div>
+            <div class="btn-group">
+                <div class="preview-btn" id="retake-btn">重新拍摄</div>
+                <div class="preview-btn" id="confirm-btn">确认选择</div>
+            </div>
+        </div>
+
+        <div id="final-page">
+            <div class="music-btn"></div>
+            <div class="final-photo-area" id="final-photo-container">
+                <img id="final-photo" alt="拍摄的照片">
+                <div class="final-content-wrapper">
+                    <div class="kite-text" id="final-text">我的
+潍坊风筝</div>
+                    <div class="qrcode-container" id="qrcode-container">
+                        <img id="qrcode-img" src="images/2/ewm.png" alt="扫码制作二维码">
+                        <div class="qrcode-text" id="qrcode-text">扫码制作</div>
+                    </div>
+                </div>
+            </div>
+            <div class="final-btn-group">
+                <button class="final-btn" id="save-btn"><span>保存</span></button>
+                <button class="final-btn" id="share-btn"><span>分享</span></button>
+                <button class="final-btn" id="back-btn"><span>返回</span></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 性能优化：全局变量提前声明 + 缓存DOM元素 ==========
+        let kiteCaptureParams = null;
+        let bgMusic = null;
+        let isMusicPlaying = false;
+        let isCameraReady = false;
+        let captureCanvas = null;
+        let previewDataUrl = '';
+        let videoNativeSize = { width: 0, height: 0 };
+        let containerRectCache = null;
+        let tailAnimationId = null; // 风筝线动画ID，用于暂停/重启
+        const dpr = window.devicePixelRatio || 1;
+
+        // ========== 缓存DOM元素（只查询一次） ==========
+        const DOM = {
+            shootPage: document.getElementById('shoot-page'),
+            previewPage: document.getElementById('preview-page'),
+            finalPage: document.getElementById('final-page'),
+            cameraPreview: document.getElementById('camera-preview'),
+            kiteImg: document.getElementById('kite-img'),
+            shootBtn: document.getElementById('shoot-btn'),
+            previewImg: document.getElementById('preview-img'),
+            retakeBtn: document.getElementById('retake-btn'),
+            confirmBtn: document.getElementById('confirm-btn'),
+            cameraContainer: document.getElementById('camera-container'),
+            finalPhoto: document.getElementById('final-photo'),
+            finalPhotoContainer: document.getElementById('final-photo-container'),
+            saveBtn: document.getElementById('save-btn'),
+            shareBtn: document.getElementById('share-btn'),
+            backBtn: document.getElementById('back-btn'),
+            finalText: document.getElementById('final-text'),
+            qrcodeImg: document.getElementById('qrcode-img'),
+            qrcodeText: document.getElementById('qrcode-text'),
+            tailCanvas: document.getElementById('kite-tail-canvas'),
+            musicBtns: document.querySelectorAll('.music-btn')
+        };
+        const tailCtx = DOM.tailCanvas ? DOM.tailCanvas.getContext('2d') : null;
+
+        // ========== 风筝线参数（常量提取） ==========
+        const kiteLineConfig = {
+            tailXOffset: 0.45,    
+            tailYOffset: 0.55,     
+            tailLengthRatio: 4.2, 
+            angle1: 3 * Math.PI / 4,  
+            angle2: 2 * Math.PI / 3,   
+            endAngle: 3 * Math.PI / 4, 
+            wiggleSpeed: 0.012,   
+            wiggleAmplitude: 12,  
+            wiggleXMultiplier: -1.5,   
+            wiggleYMultiplier: 1.8,    
+            cp1XMultiplier: 0.8,  
+            cp1YMultiplier: 0.8,  
+            cp2XMultiplier: 1.5,  
+            cp2YMultiplier: 1.5   
+        };
+        let tailWiggle = { offsetX: 0, offsetY: 0 };
+
+        // ========== 工具函数：节流（优化resize） ==========
+        function throttle(fn, delay = 100) {
+            let timer = null;
+            return function(...args) {
+                if (!timer) {
+                    timer = setTimeout(() => {
+                        fn.apply(this, args);
+                        timer = null;
+                    }, delay);
+                }
+            };
+        }
+
+        // ========== 风筝线绘制优化 ==========
+        function resizeTailCanvas() {
+            if (!DOM.tailCanvas || !DOM.cameraContainer) return;
+            const containerRect = DOM.cameraContainer.getBoundingClientRect();
+            // 避免重复设置尺寸
+            if (DOM.tailCanvas.width !== containerRect.width * dpr) {
+                DOM.tailCanvas.width = containerRect.width * dpr;
+                DOM.tailCanvas.height = containerRect.height * dpr;
+                DOM.tailCanvas.style.width = `${containerRect.width}px`;
+                DOM.tailCanvas.style.height = `${containerRect.height}px`;
+                if (tailCtx) tailCtx.scale(dpr, dpr);
+            }
+        }
+
+        // 节流resize事件
+        const throttledResize = throttle(resizeTailCanvas, 200);
+        window.addEventListener('resize', throttledResize);
+
+        function calculateKiteLineParams(kiteRect) {
+            if (!DOM.cameraContainer) return null;
+            const cameraRect = DOM.cameraContainer.getBoundingClientRect();
+            const relativeKiteX = kiteRect.left - cameraRect.left;
+            const relativeKiteY = kiteRect.top - cameraRect.top;
+            
+            const kiteTailX = relativeKiteX + (kiteRect.width * kiteLineConfig.tailXOffset);
+            const kiteTailY = relativeKiteY + (kiteRect.height * kiteLineConfig.tailYOffset);
+            
+            const transform = window.getComputedStyle(DOM.kiteImg).transform;
+            let rotateAngle = 15 * Math.PI / 180;
+            if (transform !== 'none' && transform !== 'matrix(1, 0, 0, 1, 0, 0)') {
+                try {
+                    const transformArr = transform.match(/matrix\(([^)]+)\)/)[1].split(',').map(Number);
+                    rotateAngle = Math.atan2(transformArr[1], transformArr[0]);
+                } catch (e) { /* 容错：避免解析失败 */ }
+            }
+
+            // 简化摆动计算
+            const time = Date.now() * kiteLineConfig.wiggleSpeed;
+            tailWiggle.offsetX = Math.sin(time) * kiteLineConfig.wiggleAmplitude * kiteLineConfig.wiggleXMultiplier;
+            tailWiggle.offsetY = Math.cos(time * 0.8) * kiteLineConfig.wiggleAmplitude * kiteLineConfig.wiggleYMultiplier;
+            
+            const tailLength = kiteRect.width * kiteLineConfig.tailLengthRatio;
+            const startX = kiteTailX;
+            const startY = kiteTailY;
+            const angle1 = rotateAngle + kiteLineConfig.angle1;
+            const angle2 = rotateAngle + kiteLineConfig.angle2;
+            
+            const cp1X = startX + Math.cos(angle1) * tailLength * 0.2 + tailWiggle.offsetX * kiteLineConfig.cp1XMultiplier;
+            const cp1Y = startY + Math.sin(angle1) * tailLength * 0.2 + tailWiggle.offsetY * kiteLineConfig.cp1YMultiplier;
+            const cp2X = startX + Math.cos(angle2) * tailLength * 0.8 + tailWiggle.offsetX * kiteLineConfig.cp2XMultiplier;
+            const cp2Y = startY + Math.sin(angle2) * tailLength * 0.8 + tailWiggle.offsetY * kiteLineConfig.cp2YMultiplier;
+            const endX = startX + Math.cos(rotateAngle + kiteLineConfig.endAngle) * tailLength;
+            const endY = startY + Math.sin(rotateAngle + kiteLineConfig.endAngle) * tailLength;
+
+            return {
+                startX, startY, cp1X, cp1Y, cp2X, cp2Y, endX, endY,
+                rotateAngle, tailLength, kiteRect, cameraRect
+            };
+        }
+
+        // 仅在相机就绪时绘制风筝线
+        function drawKiteTail() {
+            if (!isCameraReady || !tailCtx || !DOM.kiteImg) {
+                tailAnimationId = requestAnimationFrame(drawKiteTail);
+                return;
+            }
+            
+            try {
+                tailCtx.clearRect(0, 0, DOM.tailCanvas.width / dpr, DOM.tailCanvas.height / dpr);
+                const kiteRect = DOM.kiteImg.getBoundingClientRect();
+                const lineParams = calculateKiteLineParams(kiteRect);
+                if (!lineParams) return;
+
+                tailCtx.beginPath();
+                tailCtx.moveTo(lineParams.startX, lineParams.startY);
+                tailCtx.bezierCurveTo(
+                    lineParams.cp1X, lineParams.cp1Y,
+                    lineParams.cp2X, lineParams.cp2Y,
+                    lineParams.endX, lineParams.endY
+                );
+                tailCtx.strokeStyle = '#000000';
+                tailCtx.lineWidth = Math.max(1, kiteRect.width * 0.004);
+                tailCtx.lineCap = 'round';
+                tailCtx.stroke();
+            } catch (e) { /* 容错：避免绘制失败导致页面卡死 */ }
+            
+            tailAnimationId = requestAnimationFrame(drawKiteTail);
+        }
+
+        // ========== 相机初始化优化（异步+非阻塞） ==========
+        function getCoverDrawParams(videoW, videoH, containerW, containerH) {
+            const videoRatio = videoW / videoH;
+            const containerRatio = containerW / containerH;
+
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (videoRatio > containerRatio) {
+                drawHeight = containerH;
+                drawWidth = videoW * (containerH / videoH);
+                offsetX = (drawWidth - containerW) / 2;
+                offsetY = 0;
+            } else {
+                drawWidth = containerW;
+                drawHeight = videoH * (containerW / videoW);
+                offsetX = 0;
+                offsetY = (drawHeight - containerH) / 2;
+            }
+
+            return {
+                sx: 0, sy: 0, sw: videoW, sh: videoH,
+                dx: -offsetX, dy: -offsetY, dw: drawWidth, dh: drawHeight
+            };
+        }
+
+        async function initCamera() {
+            // 提前退出：无相机API
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                alert('你的浏览器不支持相机功能，请使用Chrome/Edge/Firefox');
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+
+                DOM.cameraPreview.srcObject = stream;
+                
+                DOM.cameraPreview.onloadedmetadata = () => {
+                    videoNativeSize.width = DOM.cameraPreview.videoWidth;
+                    videoNativeSize.height = DOM.cameraPreview.videoHeight;
+                    isCameraReady = true;
+                    // 启动风筝线绘制
+                    if (!tailAnimationId) drawKiteTail();
+                };
+            } catch (err) {
+                let errMsg = '';
+                if (err.name === 'NotAllowedError') errMsg = '请允许相机权限（地址栏左侧相机图标→允许）';
+                else if (err.name === 'NotSupportedError') errMsg = '需在本地服务器运行（如VSCode Live Server），禁止双击HTML文件';
+                else errMsg = '相机初始化失败：' + err.message;
+                alert(errMsg);
+                isCameraReady = false;
+            }
+        }
+
+        // ========== 优化风筝图片加载逻辑 ==========
+        function loadKiteImage() {
+            const kiteBase64 = localStorage.getItem('diyKiteBase64');
+            const kiteType = localStorage.getItem('diyKiteType') || 'swallow';
+            const urlParams = new URLSearchParams(window.location.search);
+            const encodedKite = urlParams.get('kite');
+            const defaultKiteSrc = DOM.kiteImg.dataset.src || 'images/2/IMG_2589.png';
+
+            // 优先使用自定义风筝，否则保持当前src（已直接加载默认图）
+            if (kiteBase64) {
+                try {
+                    DOM.kiteImg.src = kiteBase64;
+                    localStorage.removeItem('diyKiteBase64');
+                    localStorage.removeItem('diyKiteType');
+                    console.log('使用localStorage中的自定义风筝图片');
+                } catch (err) {
+                    console.warn('localStorage加载失败:', err);
+                    // 保持默认图片
+                }
+            } else if (encodedKite) {
+                try {
+                    const decodedKite = decodeURIComponent(encodedKite);
+                    DOM.kiteImg.src = decodedKite;
+                    console.log('使用URL参数中的风筝图片:', decodedKite);
+                } catch (err) {
+                    console.warn('URL加载失败:', err);
+                    // 保持默认图片
+                }
+            }
+
+            // 增加图片加载状态监控
+            DOM.kiteImg.onload = function() {
+                console.log('风筝图片加载成功:', this.src);
+                // 确保图片可见
+                this.style.opacity = 1;
+                this.style.visibility = 'visible';
+            };
+
+            // 图片加载失败容错 + 调试信息
+            DOM.kiteImg.onerror = function () {
+                console.error(`❌ 风筝图片加载失败: ${this.src}`);
+                // 使用备用图片（可以替换为你自己的备用图片路径）
+                this.src = 'https://via.placeholder.com/200x150?text=风筝图片';
+                alert('风筝图片加载失败，请检查图片路径是否正确！');
+            };
+        }
+
+        // ========== 音乐加载优化（按需加载） ==========
+        function initAudio() {
+            if (bgMusic) return;
+            // 延迟加载音频，避免阻塞页面
+            setTimeout(() => {
+                bgMusic = new Audio('素材最终/music.m4a');
+                bgMusic.loop = true;
+                bgMusic.load(); // 预加载但不自动播放
+            }, 1000);
+        }
+
+        function toggleMusic() {
+            if (!bgMusic) initAudio();
+            
+            // 音频未加载完成时直接返回
+            if (!bgMusic) return;
+            
+            try {
+                if (isMusicPlaying) {
+                    bgMusic.pause();
+                    DOM.musicBtns.forEach(btn => btn.classList.remove('active'));
+                } else {
+                    bgMusic.play().catch(err => {
+                        console.error('音乐播放失败:', err);
+                        // 重试一次
+                        setTimeout(() => bgMusic.play().catch(e => console.error('重试播放失败:', e)), 100);
+                    });
+                    DOM.musicBtns.forEach(btn => btn.classList.add('active'));
+                }
+                isMusicPlaying = !isMusicPlaying;
+            } catch (e) {
+                console.error('音乐控制异常:', e);
+            }
+        }
+
+        // ========== 事件绑定（延迟绑定，避免阻塞） ==========
+        function bindEvents() {
+            // 风筝点击事件
+            DOM.kiteImg.addEventListener('click', () => {
+                if (!DOM.kiteImg.classList.contains('flying')) {
+                    DOM.kiteImg.classList.add('flying');
+                }
+            });
+
+            // 拍摄按钮事件
+            DOM.shootBtn.addEventListener('click', async () => {
+                if (!isCameraReady || !videoNativeSize.width) {
+                    alert('相机还未就绪！请先允许权限或等待加载');
+                    return;
+                }
+
+                try {
+                    DOM.kiteImg.style.animationPlayState = 'paused';
+                    containerRectCache = DOM.cameraContainer.getBoundingClientRect();
+                    const containerW = containerRectCache.width;
+                    const containerH = containerRectCache.height;
+
+                    captureCanvas = document.createElement('canvas');
+                    captureCanvas.width = containerW * dpr;
+                    captureCanvas.height = containerH * dpr;
+                    const ctx = captureCanvas.getContext('2d');
+                    ctx.scale(dpr, dpr);
+
+                    // 绘制相机画面
+                    const drawParams = getCoverDrawParams(
+                        videoNativeSize.width, 
+                        videoNativeSize.height, 
+                        containerW, 
+                        containerH
+                    );
+                    ctx.drawImage(
+                        DOM.cameraPreview,
+                        drawParams.sx, drawParams.sy, drawParams.sw, drawParams.sh,
+                        drawParams.dx, drawParams.dy, drawParams.dw, drawParams.dh
+                    );
+
+                    // 获取风筝参数
+                    const kiteRect = DOM.kiteImg.getBoundingClientRect();
+                    const kiteOffsetX = kiteRect.left - containerRectCache.left;
+                    const kiteOffsetY = kiteRect.top - containerRectCache.top;
+                    const kiteWidth = kiteRect.width;
+                    const kiteHeight = kiteRect.height;
+
+                    // 获取旋转和缩放
+                    const transform = window.getComputedStyle(DOM.kiteImg).transform;
+                    let rotateAngle = 15 * Math.PI / 180;
+                    let scale = 1;
+                    if (transform !== 'none' && transform !== 'matrix(1, 0, 0, 1, 0, 0)') {
+                        try {
+                            const transformArr = transform.match(/matrix\(([^)]+)\)/)[1].split(',').map(Number);
+                            rotateAngle = Math.atan2(transformArr[1], transformArr[0]);
+                            scale = Math.sqrt(transformArr[0] * transformArr[0] + transformArr[1] * transformArr[1]);
+                        } catch (e) { /* 容错 */ }
+                    }
+
+                    // 缓存参数
+                    kiteCaptureParams = {
+                        offsetX: kiteOffsetX,
+                        offsetY: kiteOffsetY,
+                        width: kiteWidth,
+                        height: kiteHeight,
+                        rotateAngle: rotateAngle,
+                        scale: scale,
+                        containerW: containerW,
+                        containerH: containerH
+                    };
+
+                    // 绘制风筝线
+                    const lineParams = calculateKiteLineParams(kiteRect);
+                    if (lineParams && ctx) {
+                        ctx.beginPath();
+                        ctx.moveTo(lineParams.startX, lineParams.startY);
+                        ctx.bezierCurveTo(
+                            lineParams.cp1X, lineParams.cp1Y,
+                            lineParams.cp2X, lineParams.cp2Y,
+                            lineParams.endX, lineParams.endY
+                        );
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = Math.max(1, kiteWidth * 0.004);
+                        ctx.lineCap = 'round';
+                        ctx.stroke();
+                    }
+
+                    // 绘制风筝
+                    ctx.save();
+                    ctx.translate(
+                        kiteCaptureParams.offsetX + kiteCaptureParams.width / 2,
+                        kiteCaptureParams.offsetY + kiteCaptureParams.height / 2
+                    );
+                    ctx.rotate(kiteCaptureParams.rotateAngle);
+                    ctx.scale(kiteCaptureParams.scale, kiteCaptureParams.scale);
+                    ctx.drawImage(
+                        DOM.kiteImg,
+                        -kiteCaptureParams.width / 2,
+                        -kiteCaptureParams.height / 2,
+                        kiteCaptureParams.width,
+                        kiteCaptureParams.height
+                    );
+                    ctx.restore();
+
+                    // 生成预览图
+                    previewDataUrl = captureCanvas.toDataURL('image/png');
+                    DOM.previewImg.src = previewDataUrl;
+                    DOM.finalPhoto.src = previewDataUrl;
+
+                    DOM.shootPage.style.display = 'none';
+                    DOM.previewPage.style.display = 'block';
+
+                } catch (drawErr) {
+                    alert('拍摄失败：' + drawErr.message);
+                    console.error(drawErr);
+                }
+            });
+
+            // 重新拍摄
+            DOM.retakeBtn.addEventListener('click', () => {
+                DOM.kiteImg.classList.remove('flying');
+                DOM.kiteImg.style.animationPlayState = 'running';
+                void DOM.kiteImg.offsetWidth; // 重启动画
+                DOM.previewPage.style.display = 'none';
+                DOM.shootPage.style.display = 'block';
+                captureCanvas = null;
+                previewDataUrl = '';
+                containerRectCache = null;
+                kiteCaptureParams = null;
+            });
+
+            // 确认按钮
+            DOM.confirmBtn.addEventListener('click', () => {
+                if (!previewDataUrl) {
+                    alert('暂无拍摄的照片！');
+                    return;
+                }
+                DOM.previewPage.style.display = 'none';
+                DOM.finalPage.style.display = 'block';
+            });
+
+            // 保存按钮
+            DOM.saveBtn.addEventListener('click', async () => {
+                if (!previewDataUrl || !containerRectCache || !kiteCaptureParams) {
+                    alert('暂无可保存的照片！');
+                    return;
+                }
+
+                try {
+                    const saveCanvas = document.createElement('canvas');
+                    saveCanvas.width = kiteCaptureParams.containerW * dpr;
+                    saveCanvas.height = kiteCaptureParams.containerH * dpr;
+                    const ctx = saveCanvas.getContext('2d');
+                    ctx.scale(dpr, dpr);
+
+                    // 绘制底图
+                    const previewImgObj = new Image();
+                    previewImgObj.crossOrigin = 'anonymous';
+                    previewImgObj.src = previewDataUrl;
+                    await new Promise((resolve) => {
+                        previewImgObj.onload = resolve;
+                        previewImgObj.onerror = () => resolve();
+                    });
+                    ctx.drawImage(previewImgObj, 0, 0, kiteCaptureParams.containerW, kiteCaptureParams.containerH);
+
+                    // 重新绘制风筝
+                    ctx.save();
+                    ctx.translate(
+                        kiteCaptureParams.offsetX + kiteCaptureParams.width / 2,
+                        kiteCaptureParams.offsetY + kiteCaptureParams.height / 2
+                    );
+                    ctx.rotate(kiteCaptureParams.rotateAngle);
+                    ctx.scale(kiteCaptureParams.scale, kiteCaptureParams.scale);
+                    ctx.drawImage(
+                        DOM.kiteImg,
+                        -kiteCaptureParams.width / 2,
+                        -kiteCaptureParams.height / 2,
+                        kiteCaptureParams.width,
+                        kiteCaptureParams.height
+                    );
+                    ctx.restore();
+
+                    // 绘制文字和二维码
+                    const finalContainerRect = DOM.finalPhotoContainer.getBoundingClientRect();
+                    const scaleRatioW = kiteCaptureParams.containerW / finalContainerRect.width;
+                    const scaleRatioH = kiteCaptureParams.containerH / finalContainerRect.height;
+
+                    // 文字
+                    const textRect = DOM.finalText.getBoundingClientRect();
+                    const textX = textRect.left - finalContainerRect.left * scaleRatioW;
+                    const textY = textRect.top - finalContainerRect.top * scaleRatioH;
+                    const textW = textRect.width * scaleRatioW;
+                    const textH = textRect.height * scaleRatioH;
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.fillRect(textX, textY, textW, textH);
+
+                    const textLines = DOM.finalText.textContent.trim().split('\n');
+                    const fontSize = parseFloat(getComputedStyle(DOM.finalText).fontSize) * scaleRatioW;
+                    ctx.font = `400 ${fontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
+                    ctx.fillStyle = '#000';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+                    const paddingX = parseFloat(getComputedStyle(DOM.finalText).paddingLeft) * scaleRatioW;
+                    const paddingY = parseFloat(getComputedStyle(DOM.finalText).paddingTop) * scaleRatioH;
+                    ctx.fillText(textLines[0] || '我的', textX + paddingX, textY + paddingY);
+                    ctx.fillText(textLines[1] || '潍坊风筝', textX + paddingX, textY + paddingY + fontSize * 1.2);
+
+                    // 二维码
+                    const qrImgRect = DOM.qrcodeImg.getBoundingClientRect();
+                    const qrImgX = (qrImgRect.left - finalContainerRect.left) * scaleRatioW;
+                    const qrImgY = (qrImgRect.top - finalContainerRect.top) * scaleRatioH;
+                    const qrImgW = qrImgRect.width * scaleRatioW;
+                    const qrImgH = qrImgRect.height * scaleRatioH;
+
+                    const qrImgObj = new Image();
+                    qrImgObj.crossOrigin = 'anonymous';
+                    qrImgObj.src = DOM.qrcodeImg.src;
+                    await new Promise((resolve) => {
+                        qrImgObj.onload = () => {
+                            ctx.drawImage(qrImgObj, qrImgX, qrImgY, qrImgW, qrImgH);
+                            resolve();
+                        };
+                        qrImgObj.onerror = () => resolve();
+                    });
+
+                    // 二维码文字
+                    const qrTextRect = DOM.qrcodeText.getBoundingClientRect();
+                    const qrTextX = (qrTextRect.left - finalContainerRect.left) * scaleRatioW;
+                    const qrTextY = (qrTextRect.top - finalContainerRect.top) * scaleRatioH;
+                    const qrTextW = qrTextRect.width * scaleRatioW;
+                    const qrTextH = qrTextRect.height * scaleRatioH;
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.fillRect(qrTextX, qrTextY, qrTextW, qrTextH);
+
+                    const qrFontSize = parseFloat(getComputedStyle(DOM.qrcodeText).fontSize) * scaleRatioW;
+                    ctx.font = `400 ${qrFontSize}px "Microsoft YaHei", "SimHei", sans-serif`;
+                    ctx.fillStyle = '#000';
+                    const qrPaddingX = parseFloat(getComputedStyle(DOM.qrcodeText).paddingLeft) * scaleRatioW;
+                    const qrPaddingY = parseFloat(getComputedStyle(DOM.qrcodeText).paddingTop) * scaleRatioH;
+                    ctx.fillText(DOM.qrcodeText.textContent.trim(), qrTextX + qrPaddingX, qrTextY + qrPaddingY);
+
+                    // 下载
+                    const finalDataUrl = saveCanvas.toDataURL('image/png');
+                    const a = document.createElement('a');
+                    a.href = finalDataUrl;
+                    a.download = `我的潍坊风筝_${Date.now()}.png`;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    alert('保存成功！风筝与预览图完全一致～');
+                } catch (err) {
+                    alert('保存失败：' + err.message);
+                    console.error(err);
+                }
+            });
+
+            // 返回按钮
+            DOM.backBtn.addEventListener('click', () => {
+                DOM.finalPage.style.display = 'none';
+                DOM.previewPage.style.display = 'block';
+            });
+
+            // 分享按钮
+            DOM.shareBtn.addEventListener('click', () => {
+                alert('分享功能暂未开放');
+            });
+
+            // 音乐按钮
+            DOM.musicBtns.forEach(btn => {
+                btn.addEventListener('click', toggleMusic);
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    toggleMusic();
+                }, { passive: false });
+            });
+
+            // 页面隐藏时暂停音乐
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && isMusicPlaying && bgMusic) {
+                    bgMusic.pause();
+                    DOM.musicBtns.forEach(btn => btn.classList.remove('active'));
+                    isMusicPlaying = false;
+                }
+            });
+        }
+
+        // ========== 页面加载完成后初始化（非阻塞） ==========
+        window.addEventListener('load', () => {
+            // 初始化画布尺寸
+            resizeTailCanvas();
+            // 立即加载风筝图片（不再依赖相机）
+            loadKiteImage();
+            // 异步初始化相机（不阻塞页面）
+            setTimeout(initCamera, 500);
+            // 绑定事件
+            bindEvents();
+            // 启动风筝线绘制（初始为暂停状态，相机就绪后才真正绘制）
+            if (!tailAnimationId) drawKiteTail();
+        });
+    </script>
+</body>
+</html>
